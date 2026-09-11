@@ -1,0 +1,3077 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1"
+    />
+    <title>🤖 Can AI Beat You? — The CAPTCHA Challenge</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@500;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #eaf6ff;
+        --bg2: #fff6e3;
+        --surface: #ffffff;
+        --surface2: #fffcf4;
+        --ink: #22284a;
+        --muted: #6c74a0;
+        --line: #dce8fb;
+
+        --sky: #29b6f6;
+        --sky-dark: #0e97d9;
+        --lime: #7bc142;
+        --lime-dark: #5da02c;
+        --sun: #ffc93c;
+        --sun-dark: #e8a800;
+        --coral: #ff6b6b;
+        --coral-dark: #e44d4d;
+        --grape: #a98bfa;
+        --grape-dark: #8a63f0;
+
+        --human: #22b573;
+        --human-dark: #178c58;
+        --ai: #ff6b6b;
+        --ai-dark: #e44d4d;
+
+        --radius: 26px;
+        --radius-sm: 16px;
+        --font-head: "Fredoka One", cursive;
+        --font-body: "Nunito", sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html {
+        -webkit-text-size-adjust: 100%;
+      }
+
+      body {
+        background: linear-gradient(180deg, var(--bg) 0%, var(--bg2) 100%);
+        color: var(--ink);
+        font-family: var(--font-body);
+        min-height: 100vh;
+        overflow-x: hidden;
+        font-size: 17px;
+      }
+
+      /* Floaty background shapes — kept subtle and few, per design restraint */
+      .floaty {
+        position: fixed;
+        font-size: 2.6rem;
+        opacity: 0.18;
+        pointer-events: none;
+        z-index: 0;
+        animation: bob 6s ease-in-out infinite;
+      }
+      .floaty.f1 {
+        top: 6%;
+        left: 4%;
+        animation-delay: 0s;
+      }
+      .floaty.f2 {
+        top: 14%;
+        right: 6%;
+        animation-delay: 1.5s;
+        font-size: 2rem;
+      }
+      .floaty.f3 {
+        bottom: 10%;
+        left: 8%;
+        animation-delay: 3s;
+        font-size: 2.2rem;
+      }
+      .floaty.f4 {
+        bottom: 20%;
+        right: 10%;
+        animation-delay: 2s;
+      }
+      @keyframes bob {
+        0%,
+        100% {
+          transform: translateY(0) rotate(0deg);
+        }
+        50% {
+          transform: translateY(-14px) rotate(6deg);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .floaty {
+          animation: none;
+        }
+      }
+
+      .container {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 0 18px;
+        position: relative;
+        z-index: 1;
+      }
+
+      /* Header */
+      header {
+        padding: 34px 18px 18px;
+        text-align: center;
+      }
+      .header-badge {
+        display: inline-block;
+        background: linear-gradient(135deg, var(--sun), #ffb300);
+        color: #4a3300;
+        font-family: var(--font-body);
+        font-weight: 900;
+        font-size: 13px;
+        letter-spacing: 1px;
+        padding: 7px 18px;
+        border-radius: 99px;
+        margin-bottom: 16px;
+        box-shadow: 0 4px 0 var(--sun-dark);
+      }
+      h1 {
+        font-family: var(--font-head);
+        font-size: clamp(2.3rem, 7vw, 4rem);
+        line-height: 1.08;
+        margin-bottom: 12px;
+        color: var(--ink);
+        text-shadow: 3px 3px 0 rgba(41, 182, 246, 0.18);
+      }
+      .subtitle {
+        color: var(--muted);
+        font-size: 1.15rem;
+        font-weight: 700;
+        max-width: 560px;
+        margin: 0 auto 26px;
+        line-height: 1.55;
+      }
+
+      /* API key setup */
+      .api-setup {
+        background: var(--surface);
+        border: 3px solid var(--line);
+        border-radius: 99px;
+        padding: 10px 12px 10px 22px;
+        max-width: 620px;
+        margin: 0 auto 30px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        justify-content: center;
+        flex-wrap: wrap;
+        box-shadow: 0 4px 0 var(--line);
+      }
+      #key-status {
+        font-size: 14px;
+        font-weight: 800;
+        color: var(--human);
+      }
+      #key-input-row {
+        display: none;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      #key-input-row.show {
+        display: flex;
+      }
+      #groq-key-input {
+        border: 2px solid var(--line);
+        border-radius: 99px;
+        padding: 8px 14px;
+        font-family: var(--font-body);
+        font-weight: 700;
+        font-size: 13px;
+        outline: none;
+        width: 220px;
+        color: var(--ink);
+      }
+      #groq-key-input:focus {
+        border-color: var(--sky);
+      }
+
+      /* Scoreboard */
+      .scoreboard {
+        display: flex;
+        gap: 14px;
+        justify-content: center;
+        margin-bottom: 28px;
+        flex-wrap: wrap;
+      }
+      .score-card {
+        background: var(--surface);
+        border: 3px solid var(--line);
+        border-radius: 20px;
+        padding: 16px 30px;
+        text-align: center;
+        min-width: 130px;
+        box-shadow: 0 5px 0 var(--line);
+      }
+      .score-card.human {
+        border-color: rgba(34, 181, 115, 0.35);
+        box-shadow: 0 5px 0 rgba(34, 181, 115, 0.35);
+      }
+      .score-card.ai-card {
+        border-color: rgba(255, 107, 107, 0.35);
+        box-shadow: 0 5px 0 rgba(255, 107, 107, 0.35);
+      }
+      .score-label {
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+      }
+      .score-card.human .score-label {
+        color: var(--human);
+      }
+      .score-card.ai-card .score-label {
+        color: var(--ai);
+      }
+      .score-num {
+        font-family: var(--font-head);
+        font-size: 2.6rem;
+        line-height: 1;
+      }
+      .score-card.human .score-num {
+        color: var(--human);
+      }
+      .score-card.ai-card .score-num {
+        color: var(--ai);
+      }
+      .score-sub {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 3px;
+        font-weight: 700;
+      }
+
+      /* Tabs */
+      .tab-bar {
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-bottom: 26px;
+      }
+      .tab-btn {
+        background: var(--surface);
+        border: 3px solid var(--line);
+        border-radius: 99px;
+        padding: 10px 18px;
+        color: var(--muted);
+        font-family: var(--font-body);
+        font-weight: 800;
+        font-size: 14px;
+        cursor: pointer;
+        transition: transform 0.12s;
+        box-shadow: 0 4px 0 var(--line);
+      }
+      .tab-btn:active {
+        transform: translateY(3px);
+        box-shadow: 0 1px 0 var(--line);
+      }
+      .tab-btn.active {
+        background: linear-gradient(135deg, var(--sky), var(--sky-dark));
+        color: white;
+        border-color: var(--sky-dark);
+        box-shadow: 0 4px 0 var(--sky-dark);
+      }
+
+      .activity-panel {
+        display: none;
+      }
+      .activity-panel.active {
+        display: block;
+      }
+
+      .activity-card {
+        background: var(--surface);
+        border: 3px solid var(--line);
+        border-radius: var(--radius);
+        padding: 26px;
+        margin-bottom: 24px;
+      }
+      .activity-header {
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+      }
+      .activity-icon {
+        font-size: 2.8rem;
+        line-height: 1;
+        flex-shrink: 0;
+        background: var(--bg);
+        border-radius: 18px;
+        width: 64px;
+        height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .activity-info {
+        flex: 1;
+        min-width: 220px;
+      }
+      .activity-title {
+        font-family: var(--font-head);
+        font-size: 1.6rem;
+        color: var(--sky-dark);
+        margin-bottom: 6px;
+      }
+      .activity-desc {
+        font-size: 15px;
+        color: var(--ink);
+        line-height: 1.55;
+        font-weight: 600;
+      }
+      .difficulty-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: 0.5px;
+        padding: 6px 14px;
+        border-radius: 99px;
+        flex-shrink: 0;
+      }
+      .diff-easy {
+        background: rgba(123, 193, 66, 0.18);
+        color: var(--lime-dark);
+        border: 2px solid rgba(123, 193, 66, 0.4);
+      }
+      .diff-medium {
+        background: rgba(255, 201, 60, 0.22);
+        color: #a87400;
+        border: 2px solid rgba(255, 201, 60, 0.5);
+      }
+      .diff-hard {
+        background: rgba(255, 107, 107, 0.16);
+        color: var(--ai-dark);
+        border: 2px solid rgba(255, 107, 107, 0.4);
+      }
+
+      .vs-layout {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        gap: 18px;
+        align-items: start;
+      }
+      @media (max-width: 720px) {
+        .vs-layout {
+          grid-template-columns: 1fr;
+        }
+        .vs-divider {
+          flex-direction: row;
+          padding: 6px 0;
+        }
+        .vs-divider .vs-line {
+          width: 40px;
+          height: 1px;
+        }
+      }
+      .vs-divider {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding-top: 50px;
+        gap: 8px;
+      }
+      .vs-text {
+        font-family: var(--font-head);
+        font-size: 1.7rem;
+        color: var(--sun-dark);
+      }
+      .vs-line {
+        width: 1px;
+        height: 40px;
+        background: var(--line);
+      }
+
+      .player-box {
+        background: var(--bg);
+        border: 3px solid var(--line);
+        border-radius: 20px;
+        padding: 18px;
+      }
+      .player-box.human-box {
+        border-color: rgba(34, 181, 115, 0.3);
+        background: rgba(34, 181, 115, 0.06);
+      }
+      .player-box.ai-box {
+        border-color: rgba(255, 107, 107, 0.3);
+        background: rgba(255, 107, 107, 0.06);
+      }
+      .player-label {
+        font-weight: 900;
+        font-size: 13px;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .human-box .player-label {
+        color: var(--human-dark);
+      }
+      .ai-box .player-label {
+        color: var(--ai-dark);
+      }
+
+      canvas {
+        border-radius: 14px;
+        display: block;
+        margin: 0 auto 12px;
+        border: 3px solid var(--line);
+        background: #ffffff;
+        cursor: pointer;
+        max-width: 100%;
+        height: auto;
+      }
+
+      .answer-row {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      input[type="number"],
+      input[type="text"] {
+        background: #ffffff;
+        border: 3px solid var(--line);
+        border-radius: 14px;
+        padding: 10px 14px;
+        color: var(--ink);
+        font-family: var(--font-body);
+        font-weight: 800;
+        font-size: 18px;
+        width: 100px;
+        outline: none;
+        text-align: center;
+      }
+      input[type="number"]:focus,
+      input[type="text"]:focus {
+        border-color: var(--sky);
+      }
+      input[type="number"]::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 12px 22px;
+        border-radius: 14px;
+        border: none;
+        font-family: var(--font-body);
+        font-weight: 900;
+        font-size: 14px;
+        cursor: pointer;
+        white-space: nowrap;
+        color: white;
+        transition: transform 0.1s;
+        min-height: 46px;
+      }
+      .btn:active:not(:disabled) {
+        transform: translateY(3px);
+      }
+      .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      .btn-primary {
+        background: var(--sky);
+        box-shadow: 0 4px 0 var(--sky-dark);
+      }
+      .btn-primary:active:not(:disabled) {
+        box-shadow: 0 1px 0 var(--sky-dark);
+      }
+      .btn-ai {
+        background: var(--coral);
+        box-shadow: 0 4px 0 var(--coral-dark);
+      }
+      .btn-ai:active:not(:disabled) {
+        box-shadow: 0 1px 0 var(--coral-dark);
+      }
+      .btn-regen {
+        background: var(--grape);
+        box-shadow: 0 4px 0 var(--grape-dark);
+      }
+      .btn-regen:active:not(:disabled) {
+        box-shadow: 0 1px 0 var(--grape-dark);
+      }
+      .btn-green {
+        background: var(--human);
+        box-shadow: 0 4px 0 var(--human-dark);
+      }
+
+      .result-indicator {
+        margin-top: 10px;
+        padding: 12px 14px;
+        border-radius: 14px;
+        font-weight: 800;
+        font-size: 14px;
+        display: none;
+        align-items: center;
+        gap: 8px;
+      }
+      .result-indicator.show {
+        display: flex;
+      }
+      .result-correct {
+        background: rgba(34, 181, 115, 0.15);
+        color: var(--human-dark);
+        border: 2px solid rgba(34, 181, 115, 0.35);
+      }
+      .result-wrong {
+        background: rgba(255, 107, 107, 0.13);
+        color: var(--ai-dark);
+        border: 2px solid rgba(255, 107, 107, 0.35);
+      }
+      .result-loading {
+        background: rgba(255, 201, 60, 0.18);
+        color: #a87400;
+        border: 2px solid rgba(255, 201, 60, 0.4);
+      }
+
+      .ai-log {
+        background: #ffffff;
+        border: 2px solid rgba(255, 107, 107, 0.25);
+        border-radius: 14px;
+        padding: 12px;
+        font-size: 12.5px;
+        color: var(--muted);
+        margin-top: 10px;
+        font-family: "Courier New", monospace;
+        max-height: 120px;
+        overflow-y: auto;
+        line-height: 1.6;
+        display: none;
+      }
+      .ai-log.show {
+        display: block;
+      }
+      .ai-log .log-line {
+        margin-bottom: 2px;
+      }
+      .ai-log .log-answer {
+        color: var(--sun-dark);
+        font-weight: bold;
+      }
+
+      .captcha-img-wrap {
+        border-radius: 14px;
+        overflow: hidden;
+        border: 3px solid var(--line);
+        margin-bottom: 12px;
+        text-align: center;
+        background: #ffffff;
+      }
+      .captcha-img-wrap canvas {
+        max-width: 100%;
+        display: block;
+        margin: 0 auto;
+      }
+
+      .info-box {
+        background: rgba(41, 182, 246, 0.08);
+        border: 2px solid rgba(41, 182, 246, 0.25);
+        border-radius: 16px;
+        padding: 16px 20px;
+        margin-top: 18px;
+        font-size: 14.5px;
+        line-height: 1.6;
+        color: var(--sky-dark);
+        font-weight: 700;
+      }
+      .info-box strong {
+        color: var(--ink);
+      }
+
+      .research-note {
+        background: var(--bg);
+        border-left: 5px solid var(--sun);
+        border-radius: 0 14px 14px 0;
+        padding: 14px 18px;
+        margin-top: 18px;
+        font-size: 12.5px;
+        line-height: 1.7;
+        color: var(--muted);
+      }
+      .research-note strong {
+        color: #a87400;
+      }
+
+      .leaderboard-strip {
+        background: var(--surface);
+        border: 3px solid var(--line);
+        border-radius: var(--radius);
+        padding: 22px 24px;
+        margin-bottom: 32px;
+      }
+      .lb-title {
+        font-family: var(--font-head);
+        font-size: 1.2rem;
+        color: var(--sun-dark);
+        margin-bottom: 14px;
+      }
+      .lb-rows {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .lb-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 14px;
+        font-weight: 700;
+      }
+      .lb-model {
+        min-width: 130px;
+        color: var(--ink);
+      }
+      .lb-bar-wrap {
+        flex: 1;
+        background: var(--bg);
+        border-radius: 99px;
+        height: 12px;
+        overflow: hidden;
+      }
+      .lb-bar {
+        height: 100%;
+        border-radius: 99px;
+        transition: width 1s ease;
+      }
+      .lb-pct {
+        min-width: 42px;
+        text-align: right;
+        font-weight: 900;
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .lb-row.human-row .lb-bar {
+        background: var(--human);
+      }
+      .lb-row:not(.human-row) .lb-bar {
+        background: var(--ai);
+      }
+      .lb-row.human-row .lb-pct {
+        color: var(--human-dark);
+      }
+
+      #toast {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%) translateY(70px);
+        background: var(--ink);
+        border: none;
+        color: white;
+        padding: 14px 26px;
+        border-radius: 99px;
+        font-weight: 800;
+        font-size: 14px;
+        z-index: 9999;
+        transition: transform 0.3s;
+        pointer-events: none;
+      }
+      #toast.show {
+        transform: translateX(-50%) translateY(0);
+      }
+
+      footer {
+        text-align: center;
+        padding: 34px 20px;
+        color: var(--muted);
+        font-size: 12.5px;
+        line-height: 1.7;
+        font-weight: 700;
+      }
+      footer a {
+        color: var(--sky-dark);
+        text-decoration: none;
+      }
+
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--line);
+        border-radius: 4px;
+      }
+
+      /* Animal grid tiles */
+      .animal-tile {
+        aspect-ratio: 1;
+        background: #ffffff;
+        border: 3px solid var(--line);
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.3rem;
+        cursor: pointer;
+        transition: transform 0.12s;
+        user-select: none;
+        position: relative;
+        min-height: 60px;
+      }
+      .animal-tile:hover {
+        border-color: var(--sky);
+        transform: scale(1.04);
+      }
+      .animal-tile.selected {
+        border-color: var(--sky);
+        background: rgba(41, 182, 246, 0.14);
+        box-shadow: 0 0 0 3px rgba(41, 182, 246, 0.25);
+      }
+      .animal-tile.selected::after {
+        content: "✓";
+        position: absolute;
+        top: 4px;
+        right: 6px;
+        font-size: 13px;
+        font-weight: 900;
+        color: var(--sky-dark);
+        background: white;
+        border-radius: 50%;
+        width: 18px;
+        height: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .animal-tile.reveal-correct {
+        border-color: var(--human);
+        background: rgba(34, 181, 115, 0.18);
+        box-shadow: 0 0 0 3px rgba(34, 181, 115, 0.3);
+      }
+      .animal-tile.reveal-wrong {
+        border-color: var(--ai);
+        background: rgba(255, 107, 107, 0.18);
+        animation: shake 0.3s;
+      }
+      @keyframes shake {
+        0%,
+        100% {
+          transform: translateX(0);
+        }
+        25% {
+          transform: translateX(-4px);
+        }
+        75% {
+          transform: translateX(4px);
+        }
+      }
+
+      /* Pattern fixer option buttons */
+      #pattern-options {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 4px;
+      }
+      .pattern-opt-btn {
+        background: #ffffff;
+        border: 3px solid var(--line);
+        border-radius: 16px;
+        width: 68px;
+        height: 68px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: transform 0.12s;
+      }
+      .pattern-opt-btn:hover:not(:disabled) {
+        border-color: var(--sky);
+        transform: scale(1.05);
+      }
+      .pattern-opt-btn:disabled {
+        cursor: not-allowed;
+      }
+      .pattern-opt-btn.opt-correct {
+        border-color: var(--human);
+        background: rgba(34, 181, 115, 0.15);
+        box-shadow: 0 0 0 3px rgba(34, 181, 115, 0.3);
+      }
+      .pattern-opt-btn.opt-wrong {
+        border-color: var(--ai);
+        background: rgba(255, 107, 107, 0.15);
+        animation: shake 0.3s;
+      }
+
+      .spinner {
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        border: 2px solid rgba(168, 116, 0, 0.3);
+        border-top-color: #a87400;
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="floaty f1">⭐</div>
+    <div class="floaty f2">☁️</div>
+    <div class="floaty f3">🎈</div>
+    <div class="floaty f4">✨</div>
+
+    <div id="toast"></div>
+
+    <header>
+      <div class="header-badge">🔬 Real AI Research Inside!</div>
+      <h1>Can AI Beat You?</h1>
+      <p class="subtitle">
+        Play fun games that are super easy for YOU... but really hard for a
+        computer! Let's discover why your brain is amazing. 🧠✨
+      </p>
+    </header>
+
+    <div class="container">
+      <!-- API Key Setup -->
+      <div class="api-setup">
+        <span id="key-status"
+          >🔑 Ask your teacher to add the AI key to play against the
+          computer!</span
+        >
+        <div id="key-input-row">
+          <input
+            type="text"
+            id="groq-key-input"
+            placeholder="Paste Groq API key here"
+          />
+          <button
+            class="btn btn-primary"
+            style="padding: 8px 16px; min-height: 36px"
+            onclick="saveGroqKey()"
+          >
+            Save 💾
+          </button>
+        </div>
+        <button
+          class="btn btn-regen"
+          style="padding: 8px 16px; min-height: 36px"
+          onclick="toggleKeyInput()"
+        >
+          Add Key
+        </button>
+      </div>
+
+      <!-- Live Scoreboard -->
+      <div class="scoreboard">
+        <div class="score-card human">
+          <div class="score-label">👤 You</div>
+          <div class="score-num" id="human-score">0</div>
+          <div class="score-sub">correct</div>
+        </div>
+        <div class="score-card ai-card">
+          <div class="score-label">🤖 AI</div>
+          <div class="score-num" id="ai-score">0</div>
+          <div class="score-sub">correct</div>
+        </div>
+        <div
+          class="score-card"
+          style="
+            border-color: rgba(255, 201, 60, 0.5);
+            box-shadow: 0 5px 0 rgba(255, 201, 60, 0.5);
+          "
+        >
+          <div class="score-label" style="color: #a87400">🎮 Rounds</div>
+          <div class="score-num" id="round-count" style="color: #a87400">0</div>
+          <div class="score-sub">played</div>
+        </div>
+      </div>
+
+      <!-- Research Leaderboard -->
+      <div class="leaderboard-strip">
+        <div class="lb-title">
+          📊 How Did Real Computers Do? (Real Science!)
+        </div>
+        <div class="lb-rows">
+          <div class="lb-row human-row">
+            <span class="lb-model">👤 Human</span>
+            <div class="lb-bar-wrap">
+              <div class="lb-bar" style="width: 93.3%"></div>
+            </div>
+            <span class="lb-pct">93.3%</span>
+          </div>
+          <div class="lb-row">
+            <span class="lb-model">OpenAI o3</span>
+            <div class="lb-bar-wrap">
+              <div class="lb-bar" style="width: 40%"></div>
+            </div>
+            <span class="lb-pct">40.0%</span>
+          </div>
+          <div class="lb-row">
+            <span class="lb-model">GPT-4.1</span>
+            <div class="lb-bar-wrap">
+              <div class="lb-bar" style="width: 25%"></div>
+            </div>
+            <span class="lb-pct">25.0%</span>
+          </div>
+          <div class="lb-row">
+            <span class="lb-model">Gemini 2.5 Pro</span>
+            <div class="lb-bar-wrap">
+              <div class="lb-bar" style="width: 25%"></div>
+            </div>
+            <span class="lb-pct">25.0%</span>
+          </div>
+          <div class="lb-row">
+            <span class="lb-model">Claude 3.7</span>
+            <div class="lb-bar-wrap">
+              <div class="lb-bar" style="width: 20%"></div>
+            </div>
+            <span class="lb-pct">20.0%</span>
+          </div>
+          <div class="lb-row">
+            <span class="lb-model">GPT-4o</span>
+            <div class="lb-bar-wrap">
+              <div class="lb-bar" style="width: 5.7%"></div>
+            </div>
+            <span class="lb-pct">5.7%</span>
+          </div>
+        </div>
+        <div
+          style="
+            font-size: 11.5px;
+            color: var(--muted);
+            margin-top: 12px;
+            font-weight: 700;
+          "
+        >
+          Source: Open CaptchaWorld Study (Luo and team, 2025) — 225 puzzles, 20
+          puzzle types
+        </div>
+      </div>
+
+      <!-- Tab Bar -->
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('dice', event)">
+          🎲 Dice Count
+        </button>
+        <button class="tab-btn" onclick="switchTab('text', event)">
+          🔤 Hidden Word
+        </button>
+        <button class="tab-btn" onclick="switchTab('order', event)">
+          🔢 Click in Order
+        </button>
+        <button class="tab-btn" onclick="switchTab('mislead', event)">
+          😵 Don't Be Fooled
+        </button>
+        <button class="tab-btn" onclick="switchTab('animal', event)">
+          🐾 Animal Grid
+        </button>
+        <button class="tab-btn" onclick="switchTab('pattern', event)">
+          🧩 Pattern Fixer
+        </button>
+      </div>
+
+      <!-- ═══════════ ACTIVITY 1: DICE COUNT ═══════════ -->
+      <div id="panel-dice" class="activity-panel active">
+        <div class="activity-card">
+          <div class="activity-header">
+            <div class="activity-icon">🎲</div>
+            <div class="activity-info">
+              <div class="activity-title">Dice Dot Counter</div>
+              <div class="activity-desc">
+                Count every dot on every die in the picture! Easy for you —
+                almost impossible for a computer. In real tests, computers got
+                this right
+                <strong style="color: var(--coral)">0% of the time!</strong>
+              </div>
+            </div>
+            <div class="difficulty-badge diff-hard">AI: 0% correct</div>
+          </div>
+
+          <div class="vs-layout">
+            <div class="player-box human-box">
+              <div class="player-label">👤 Your Turn</div>
+              <canvas id="dice-canvas" width="300" height="200"></canvas>
+              <div
+                style="
+                  font-size: 13px;
+                  color: var(--muted);
+                  text-align: center;
+                  margin-bottom: 10px;
+                  font-weight: 700;
+                "
+              >
+                How many dots do you count in total?
+              </div>
+              <div class="answer-row">
+                <input
+                  type="number"
+                  id="dice-human-answer"
+                  min="1"
+                  max="60"
+                  placeholder="?"
+                />
+                <button class="btn btn-primary" onclick="checkDiceHuman()">
+                  Check ✓
+                </button>
+                <button class="btn btn-regen" onclick="generateDice()">
+                  New Dice 🎲
+                </button>
+              </div>
+              <div class="result-indicator" id="dice-human-result"></div>
+            </div>
+
+            <div class="vs-divider">
+              <div class="vs-line"></div>
+              <div class="vs-text">VS</div>
+              <div class="vs-line"></div>
+            </div>
+
+            <div class="player-box ai-box">
+              <div class="player-label">🤖 AI's Turn</div>
+              <div
+                style="
+                  font-size: 13px;
+                  color: var(--muted);
+                  margin-bottom: 10px;
+                  line-height: 1.5;
+                  font-weight: 700;
+                "
+              >
+                The AI looks at the exact same picture. Can it count every dot
+                correctly?
+              </div>
+              <button class="btn btn-ai" id="dice-ai-btn" onclick="askAIDice()">
+                Ask AI to Count 🤖
+              </button>
+              <div class="result-indicator" id="dice-ai-result"></div>
+
+              <div
+                style="
+                  display: flex;
+                  flex-direction: column;
+                  gap: 10px;
+                  margin-top: 10px;
+                "
+              >
+                <div
+                  class="ai-log"
+                  id="dice-ai-log"
+                  style="margin-top: 0; flex: 1"
+                ></div>
+                <div
+                  id="dice-ai-final-answer"
+                  style="
+                    display: none;
+                    background: var(--sun);
+                    color: #4a3300;
+                    font-family: var(--font-body);
+                    font-weight: 900;
+                    font-size: 15px;
+                    padding: 10px 14px;
+                    border-radius: 12px;
+                    border: 2px solid var(--sun-dark);
+                    text-align: center;
+                  "
+                >
+                  AI Answer = <span id="dice-ai-final-num">0</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="info-box">
+            <strong>Why do you win?</strong> Your eyes and brain team up to spot
+            and count dots almost instantly. Computers have to guess dot-by-dot,
+            and they easily mix up dice that overlap.
+          </div>
+
+          <div class="research-note">
+            📄 <strong>From the research:</strong> the "Dice Count" puzzle
+            scored 0% across 9 top AI models, including o3, Claude 3.7, and
+            Gemini 2.5 Pro. Only one model even got close, with 3.3%. Humans
+            scored about 93%.
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════ ACTIVITY 2: TEXT ON IMAGE ═══════════ -->
+      <div id="panel-text" class="activity-panel">
+        <div class="activity-card">
+          <div class="activity-header">
+            <div class="activity-icon">🔤</div>
+            <div class="activity-info">
+              <div class="activity-title">Warped Word Reader</div>
+              <div class="activity-desc">
+                Read the wiggly, wobbly letters hiding in the noisy picture!
+                Your brain is amazing at reading through mess. Computers get
+                confused really easily.
+              </div>
+            </div>
+            <div class="difficulty-badge diff-medium">AI: struggles</div>
+          </div>
+
+          <div class="vs-layout">
+            <div class="player-box human-box">
+              <div class="player-label">👤 Your Turn</div>
+              <div class="captcha-img-wrap">
+                <canvas
+                  id="text-captcha-canvas"
+                  width="300"
+                  height="120"
+                ></canvas>
+              </div>
+              <div
+                style="
+                  font-size: 13px;
+                  color: var(--muted);
+                  text-align: center;
+                  margin-bottom: 10px;
+                  font-weight: 700;
+                "
+              >
+                Type the letters you see:
+              </div>
+              <div class="answer-row">
+                <input
+                  type="text"
+                  id="text-human-answer"
+                  placeholder="????"
+                  maxlength="6"
+                  style="
+                    width: 130px;
+                    font-size: 20px;
+                    letter-spacing: 3px;
+                    text-transform: uppercase;
+                  "
+                />
+                <button class="btn btn-primary" onclick="checkTextHuman()">
+                  Check ✓
+                </button>
+                <button class="btn btn-regen" onclick="generateTextCaptcha()">
+                  New Word 🔤
+                </button>
+              </div>
+              <div class="result-indicator" id="text-human-result"></div>
+            </div>
+
+            <div class="vs-divider">
+              <div class="vs-line"></div>
+              <div class="vs-text">VS</div>
+              <div class="vs-line"></div>
+            </div>
+
+            <div class="player-box ai-box">
+              <div class="player-label">🤖 AI's Turn</div>
+              <div
+                style="
+                  font-size: 13px;
+                  color: var(--muted);
+                  margin-bottom: 10px;
+                  line-height: 1.5;
+                  font-weight: 700;
+                "
+              >
+                The AI sees the same messy image. Can it read through the noise?
+              </div>
+              <button class="btn btn-ai" id="text-ai-btn" onclick="askAIText()">
+                Ask AI to Read 🤖
+              </button>
+              <div class="result-indicator" id="text-ai-result"></div>
+              <div class="ai-log" id="text-ai-log"></div>
+            </div>
+          </div>
+
+          <div class="info-box">
+            <strong>Why do you win?</strong> You've read messy handwriting your
+            whole life, so your brain fills in gaps automatically. Wavy lines
+            and noisy backgrounds trip computers up.
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════ ACTIVITY 3: CLICK IN ORDER ═══════════ -->
+      <div id="panel-order" class="activity-panel">
+        <div class="activity-card">
+          <div class="activity-header">
+            <div class="activity-icon">🔢</div>
+            <div class="activity-info">
+              <div class="activity-title">Click-in-Order Challenge</div>
+              <div class="activity-desc">
+                Find the numbers 1 through 6 hiding in the picture, then click
+                them in order! In real tests,
+                <strong style="color: var(--coral)"
+                  >every single AI model got 0%.</strong
+                >
+              </div>
+            </div>
+            <div class="difficulty-badge diff-hard">AI: 0% correct</div>
+          </div>
+
+          <div class="vs-layout">
+            <div class="player-box human-box">
+              <div class="player-label">👤 Your Turn — Click 1→2→3→4→5→6</div>
+              <canvas
+                id="click-order-canvas"
+                width="300"
+                height="220"
+                onclick="handleOrderClick(event)"
+              ></canvas>
+              <div
+                id="order-progress"
+                style="
+                  font-size: 14px;
+                  color: #a87400;
+                  text-align: center;
+                  margin: 8px 0;
+                  font-weight: 800;
+                "
+              >
+                Click number: 1 next
+              </div>
+              <div class="answer-row">
+                <button class="btn btn-regen" onclick="generateOrderCaptcha()">
+                  Start Over 🔄
+                </button>
+              </div>
+              <div class="result-indicator" id="order-human-result"></div>
+            </div>
+
+            <div class="vs-divider">
+              <div class="vs-line"></div>
+              <div class="vs-text">VS</div>
+              <div class="vs-line"></div>
+            </div>
+
+            <div class="player-box ai-box">
+              <div class="player-label">🤖 AI's Turn</div>
+              <div
+                style="
+                  font-size: 13px;
+                  color: var(--muted);
+                  margin-bottom: 10px;
+                  line-height: 1.5;
+                  font-weight: 700;
+                "
+              >
+                The AI looks at the picture, finds the numbers, and tries to
+                plan the click order. Watch what happens!
+              </div>
+              <button
+                class="btn btn-ai"
+                id="order-ai-btn"
+                onclick="askAIOrder()"
+              >
+                Ask AI to Find Order 🤖
+              </button>
+              <div class="result-indicator" id="order-ai-result"></div>
+              <div class="ai-log" id="order-ai-log"></div>
+            </div>
+          </div>
+
+          <div class="info-box">
+            <strong>Why do you win?</strong> You can scan the whole picture,
+            remember exactly where each number is, then click them in the right
+            order — all at once. That's a superpower computers don't have yet!
+          </div>
+
+          <div class="research-note">
+            📄 <strong>From the research:</strong> "Click Order" scored 0%
+            across all 9 tested AI models, including o3, GPT-4.1, and Claude 3.7
+            — one of the hardest puzzle types for a computer.
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════ ACTIVITY 4: MISLEADING CLICK ═══════════ -->
+      <div id="panel-mislead" class="activity-panel">
+        <div class="activity-card">
+          <div class="activity-header">
+            <div class="activity-icon">😵</div>
+            <div class="activity-info">
+              <div class="activity-title">Don't Be Fooled!</div>
+              <div class="activity-desc">
+                The picture tries to trick you! Read the clue carefully, then
+                pick the SMART answer — not the sneaky one. AI gets fooled
+                <strong style="color: var(--coral)">100% of the time.</strong>
+              </div>
+            </div>
+            <div class="difficulty-badge diff-hard">AI: 0% correct</div>
+          </div>
+
+          <div class="vs-layout">
+            <div class="player-box human-box">
+              <div class="player-label">👤 Your Turn</div>
+              <canvas id="mislead-canvas" width="300" height="180"></canvas>
+              <div
+                id="mislead-question"
+                style="
+                  font-size: 15px;
+                  color: var(--sky-dark);
+                  font-weight: 800;
+                  text-align: center;
+                  margin: 10px 0;
+                  line-height: 1.4;
+                "
+              ></div>
+              <div
+                id="mislead-options"
+                style="
+                  display: flex;
+                  gap: 8px;
+                  flex-wrap: wrap;
+                  justify-content: center;
+                "
+              ></div>
+              <div class="result-indicator" id="mislead-human-result"></div>
+              <button
+                class="btn btn-regen"
+                style="margin-top: 10px"
+                onclick="generateMislead()"
+              >
+                New Puzzle 🔄
+              </button>
+            </div>
+
+            <div class="vs-divider">
+              <div class="vs-line"></div>
+              <div class="vs-text">VS</div>
+              <div class="vs-line"></div>
+            </div>
+
+            <div class="player-box ai-box">
+              <div class="player-label">🤖 AI's Turn</div>
+              <div
+                style="
+                  font-size: 13px;
+                  color: var(--muted);
+                  margin-bottom: 10px;
+                  line-height: 1.5;
+                  font-weight: 700;
+                "
+              >
+                The AI sees the exact same trick. Will it fall for it?
+              </div>
+              <button
+                class="btn btn-ai"
+                id="mislead-ai-btn"
+                onclick="askAIMislead()"
+              >
+                Ask AI 🤖
+              </button>
+              <div class="result-indicator" id="mislead-ai-result"></div>
+              <div class="ai-log" id="mislead-ai-log"></div>
+            </div>
+          </div>
+
+          <div class="info-box">
+            <strong>Why do you win?</strong> You understand tricky instructions
+            using common sense. Computers often follow instructions
+            word-for-word — even when the words are a trap!
+          </div>
+
+          <div class="research-note">
+            📄 <strong>From the research:</strong> "Misleading Click" scored 0%
+            across all 9 tested AI models — proof that computers still lack the
+            common-sense reasoning to spot a trick.
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════ ACTIVITY 5: ANIMAL GRID ═══════════ -->
+      <div id="panel-animal" class="activity-panel">
+        <div class="activity-card">
+          <div class="activity-header">
+            <div class="activity-icon">🐾</div>
+            <div class="activity-info">
+              <div class="activity-title">Animal Grid Hunt</div>
+              <div class="activity-desc">
+                Find every hiding animal! Click all the matching tiles, then hit
+                Verify. Miss one or pick a wrong one and you don't pass — just
+                like a real website CAPTCHA!
+              </div>
+            </div>
+            <div class="difficulty-badge diff-hard">AI: ~15% correct</div>
+          </div>
+
+          <div class="vs-layout">
+            <div class="player-box human-box">
+              <div class="player-label">👤 Your Turn</div>
+              <div
+                id="animal-instruction"
+                style="
+                  background: rgba(41, 182, 246, 0.1);
+                  border: 2px solid rgba(41, 182, 246, 0.3);
+                  border-radius: 14px;
+                  padding: 12px 14px;
+                  font-size: 15px;
+                  color: var(--sky-dark);
+                  font-weight: 800;
+                  text-align: center;
+                  margin-bottom: 12px;
+                  line-height: 1.5;
+                "
+              ></div>
+              <div
+                id="animal-grid"
+                style="
+                  display: grid;
+                  grid-template-columns: repeat(3, 1fr);
+                  gap: 6px;
+                  margin-bottom: 12px;
+                "
+              ></div>
+              <div class="answer-row">
+                <button class="btn btn-primary" onclick="checkAnimalHuman()">
+                  Verify ✓
+                </button>
+                <button
+                  class="btn btn-regen"
+                  onclick="generateAnimalChallenge()"
+                >
+                  New Grid 🔄
+                </button>
+              </div>
+              <div class="result-indicator" id="animal-human-result"></div>
+            </div>
+
+            <div class="vs-divider">
+              <div class="vs-line"></div>
+              <div class="vs-text">VS</div>
+              <div class="vs-line"></div>
+            </div>
+
+            <div class="player-box ai-box">
+              <div class="player-label">🤖 AI's Turn</div>
+              <div
+                style="
+                  font-size: 13px;
+                  color: var(--muted);
+                  margin-bottom: 10px;
+                  line-height: 1.5;
+                  font-weight: 700;
+                "
+              >
+                The AI sees the exact same grid. It has to find every matching
+                animal — without seeing any that aren't really there!
+              </div>
+              <canvas
+                id="animal-ai-canvas"
+                width="270"
+                height="270"
+                style="margin-bottom: 10px"
+              ></canvas>
+              <button
+                class="btn btn-ai"
+                id="animal-ai-btn"
+                onclick="askAIAnimal()"
+              >
+                Ask AI to Solve 🤖
+              </button>
+              <div class="result-indicator" id="animal-ai-result"></div>
+              <div class="ai-log" id="animal-ai-log"></div>
+            </div>
+          </div>
+
+          <div class="info-box">
+            <strong>Why do you win?</strong> Your eyes can scan a whole grid and
+            spot every matching animal at once. Computers sometimes "see"
+            animals that aren't even there, or miss ones that are!
+          </div>
+
+          <div class="research-note">
+            📄 <strong>From the research:</strong> "Select Animal" puzzles
+            showed about 15% AI success versus 93% for humans — computers
+            imagine extra objects and struggle to pick every match.
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════ ACTIVITY 6: PATTERN FIXER (NEW) ═══════════ -->
+      <div id="panel-pattern" class="activity-panel">
+        <div class="activity-card">
+          <div class="activity-header">
+            <div class="activity-icon">🧩</div>
+            <div class="activity-info">
+              <div class="activity-title">Pattern Fixer</div>
+              <div class="activity-desc">
+                Look at the shapes in a row, figure out the repeating pattern,
+                then click the shape that fills the empty box!
+              </div>
+            </div>
+            <div class="difficulty-badge diff-medium">AI: gets confused</div>
+          </div>
+
+          <div class="vs-layout">
+            <div class="player-box human-box">
+              <div class="player-label">👤 Your Turn</div>
+              <canvas id="pattern-canvas" width="300" height="110"></canvas>
+              <div
+                style="
+                  font-size: 13px;
+                  color: var(--muted);
+                  text-align: center;
+                  margin: 8px 0;
+                  font-weight: 700;
+                "
+              >
+                Which shape comes next?
+              </div>
+              <div id="pattern-options"></div>
+              <div class="result-indicator" id="pattern-human-result"></div>
+              <div class="answer-row">
+                <button class="btn btn-regen" onclick="generatePattern()">
+                  New Pattern 🔄
+                </button>
+              </div>
+            </div>
+
+            <div class="vs-divider">
+              <div class="vs-line"></div>
+              <div class="vs-text">VS</div>
+              <div class="vs-line"></div>
+            </div>
+
+            <div class="player-box ai-box">
+              <div class="player-label">🤖 AI's Turn</div>
+              <div
+                style="
+                  font-size: 13px;
+                  color: var(--muted);
+                  margin-bottom: 10px;
+                  line-height: 1.5;
+                  font-weight: 700;
+                "
+              >
+                The AI studies the same pattern. Can it figure out the repeating
+                rule?
+              </div>
+              <button
+                class="btn btn-ai"
+                id="pattern-ai-btn"
+                onclick="askAIPattern()"
+              >
+                Ask AI to Solve 🤖
+              </button>
+              <div class="result-indicator" id="pattern-ai-result"></div>
+              <div class="ai-log" id="pattern-ai-log"></div>
+            </div>
+          </div>
+
+          <div class="info-box">
+            <strong>Why do you win?</strong> Your brain loves finding patterns
+            and predicting what comes next — it's one of your superpowers!
+            Computers can lose track of a repeating rule, especially when shapes
+            and colors mix together.
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- /container -->
+
+    <footer>
+      <div class="container">
+        <p>
+          🔬 Activities inspired by <strong>Open CaptchaWorld</strong> — Luo and
+          team, 2025 research on AI vs humans
+        </p>
+        <p style="margin-top: 6px">
+          AI powered by the <strong>Groq Vision API</strong> · Built for
+          classroom AI literacy, ages 5–12
+        </p>
+      </div>
+    </footer>
+
+    <script>
+      // ═══════════════════════════════════════════════
+      // STATE
+      // ═══════════════════════════════════════════════
+      let humanScore = 0,
+        aiScore = 0,
+        roundCount = 0;
+
+      // Teacher: click "Add Key" above to paste a Groq API key for this session.
+      // The key is kept only in memory (never saved to the page or a file),
+      // so it needs to be re-entered each time the page is opened.
+      let groqKey = "";
+
+      // Activity state
+      let diceAnswer = 0;
+      let textAnswer = "";
+      let orderNumbers = [];
+      let orderClickProgress = 0;
+      let orderPositions = {};
+      let misleadData = {};
+
+      // ═══════════════════════════════════════════════
+      // UTILS
+      // ═══════════════════════════════════════════════
+      function showToast(msg) {
+        const t = document.getElementById("toast");
+        t.textContent = msg;
+        t.classList.add("show");
+        setTimeout(() => t.classList.remove("show"), 2200);
+      }
+
+      function setResult(id, text, type) {
+        const el = document.getElementById(id);
+        el.className = "result-indicator show result-" + type;
+        el.innerHTML =
+          (type === "correct"
+            ? "✅ "
+            : type === "wrong"
+              ? "❌ "
+              : '<span class="spinner"></span> ') + text;
+      }
+
+      function clearResult(id) {
+        const el = document.getElementById(id);
+        el.className = "result-indicator";
+        el.textContent = "";
+      }
+
+      function updateScores() {
+        document.getElementById("human-score").textContent = humanScore;
+        document.getElementById("ai-score").textContent = aiScore;
+        document.getElementById("round-count").textContent = roundCount;
+      }
+
+      function switchTab(name, evt) {
+        document
+          .querySelectorAll(".activity-panel")
+          .forEach((p) => p.classList.remove("active"));
+        document
+          .querySelectorAll(".tab-btn")
+          .forEach((b) => b.classList.remove("active"));
+        document.getElementById("panel-" + name).classList.add("active");
+        if (evt && evt.currentTarget) evt.currentTarget.classList.add("active");
+      }
+
+      function getCanvasDataUrl(canvasId) {
+        return document
+          .getElementById(canvasId)
+          .toDataURL("image/png")
+          .split(",")[1];
+      }
+
+      function toggleKeyInput() {
+        document.getElementById("key-input-row").classList.toggle("show");
+      }
+
+      function saveGroqKey() {
+        const val = document.getElementById("groq-key-input").value.trim();
+        if (!val) {
+          showToast("Please paste a key first!");
+          return;
+        }
+        groqKey = val;
+        document.getElementById("key-status").textContent =
+          "✅ AI is ready to play!";
+        document.getElementById("key-status").style.color = "var(--human)";
+        document.getElementById("key-input-row").classList.remove("show");
+        showToast("🔑 Key saved for this session!");
+      }
+
+      // ═══════════════════════════════════════════════
+      // GROQ API CALL (vision)
+      // ═══════════════════════════════════════════════
+      async function askGroqVision(imageBase64, prompt) {
+        if (!groqKey) {
+          showToast("⚠️ Ask your teacher to add the AI key first!");
+          throw new Error("No API key set yet");
+        }
+        const resp = await fetch(
+          "https://api.groq.com/openai/v1/chat/completions",
+          {
+            method: "POST",
+            headers: {
+              Authorization: "Bearer " + groqKey,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: "qwen/qwen3.6-27b",
+              messages: [
+                {
+                  role: "system",
+                  content: "You are a helpful assistant. Always follow the user's instructions exactly. When asked for only a number or short answer, reply with nothing else."
+                },
+                {
+                  role: "user",
+                  content: [
+                    {
+                      type: "image_url",
+                      image_url: {
+                        url: "data:image/png;base64," + imageBase64,
+                      },
+                    },
+                    { type: "text", text: prompt },
+                  ],
+                },
+              ],
+              max_tokens: 80,
+              temperature: 0,
+            }),
+          },
+        );
+        const data = await resp.json();
+        if (data.error) throw new Error(data.error.message);
+        return data.choices[0].message.content.trim();
+      }
+
+      // ═══════════════════════════════════════════════
+      // ACTIVITY 1: DICE COUNT
+      // ═══════════════════════════════════════════════
+      const DICE_FACES = [
+        [],
+        [[0.5, 0.5]],
+        [
+          [0.25, 0.25],
+          [0.75, 0.75],
+        ],
+        [
+          [0.25, 0.25],
+          [0.5, 0.5],
+          [0.75, 0.75],
+        ],
+        [
+          [0.25, 0.25],
+          [0.75, 0.25],
+          [0.25, 0.75],
+          [0.75, 0.75],
+        ],
+        [
+          [0.25, 0.25],
+          [0.75, 0.25],
+          [0.5, 0.5],
+          [0.25, 0.75],
+          [0.75, 0.75],
+        ],
+        [
+          [0.25, 0.2],
+          [0.75, 0.2],
+          [0.25, 0.5],
+          [0.75, 0.5],
+          [0.25, 0.8],
+          [0.75, 0.8],
+        ],
+      ];
+
+      function drawDie(ctx, x, y, size, value, rotation) {
+        ctx.save();
+        ctx.translate(x + size / 2, y + size / 2);
+        ctx.rotate(rotation);
+        ctx.shadowColor = "rgba(34,40,74,0.25)";
+        ctx.shadowBlur = 6;
+        ctx.shadowOffsetX = 3;
+        ctx.shadowOffsetY = 3;
+        const r = size * 0.16;
+        ctx.beginPath();
+        ctx.roundRect(-size / 2, -size / 2, size, size, r);
+        ctx.fillStyle = "#FFF6E3";
+        ctx.fill();
+        ctx.shadowColor = "transparent";
+        ctx.strokeStyle = "#FFC93C";
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+        ctx.fillStyle = "#22284A";
+        const dots = DICE_FACES[value];
+        dots.forEach(([dx, dy]) => {
+          ctx.beginPath();
+          const px = (dx - 0.5) * size * 0.7;
+          const py = (dy - 0.5) * size * 0.7;
+          ctx.arc(px, py, size * 0.085, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        ctx.restore();
+      }
+
+      let diceData = [];
+      function generateDice() {
+        const canvas = document.getElementById("dice-canvas");
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#EAF6FF";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        const count = 4 + Math.floor(Math.random() * 4);
+        diceData = [];
+        diceAnswer = 0;
+        const placed = [];
+
+        for (let i = 0; i < count; i++) {
+          const val = 1 + Math.floor(Math.random() * 6);
+          const size = 52 + Math.floor(Math.random() * 18);
+          const rot = (Math.random() - 0.5) * 0.7;
+          let x,
+            y,
+            tries = 0,
+            ok = false;
+          while (!ok && tries < 100) {
+            x = 8 + Math.random() * (canvas.width - size - 16);
+            y = 8 + Math.random() * (canvas.height - size - 16);
+            ok = true;
+            for (const p of placed) {
+              if (
+                Math.abs(x - p.x) < size * 0.7 &&
+                Math.abs(y - p.y) < size * 0.7
+              ) {
+                ok = false;
+                break;
+              }
+            }
+            tries++;
+          }
+          placed.push({ x, y });
+          diceData.push({ x, y, size, val, rot });
+          diceAnswer += val;
+        }
+
+        diceData.forEach((d) => drawDie(ctx, d.x, d.y, d.size, d.val, d.rot));
+
+        document.getElementById("dice-human-answer").value = "";
+        clearResult("dice-human-result");
+        clearResult("dice-ai-result");
+        document.getElementById("dice-ai-log").className = "ai-log";
+        document.getElementById("dice-ai-log").innerHTML = "";
+      }
+
+      function checkDiceHuman() {
+        const ans = parseInt(
+          document.getElementById("dice-human-answer").value,
+        );
+        if (isNaN(ans)) {
+          showToast("Type a number first!");
+          return;
+        }
+        roundCount++;
+        if (ans === diceAnswer) {
+          humanScore++;
+          setResult(
+            "dice-human-result",
+            `Yes! The answer is ${diceAnswer} 🎉`,
+            "correct",
+          );
+          showToast("🎉 You got it right!");
+        } else {
+          setResult(
+            "dice-human-result",
+            `So close! The answer was ${diceAnswer}`,
+            "wrong",
+          );
+        }
+        updateScores();
+      }
+
+      async function askAIDice() {
+        const btn = document.getElementById("dice-ai-btn");
+        btn.disabled = true;
+        setResult("dice-ai-result", "AI is counting the dots...", "loading");
+
+        const log = document.getElementById("dice-ai-log");
+        const finalAnswerBox = document.getElementById("dice-ai-final-answer");
+        const finalAnswerNum = document.getElementById("dice-ai-final-num");
+
+        // Hide previous answer panel if any
+        if (finalAnswerBox) finalAnswerBox.style.display = "none";
+
+        log.className = "ai-log show";
+        log.innerHTML =
+          '<div class="log-line">🤖 Sending picture to the AI...</div>';
+
+        try {
+          const imgData = getCanvasDataUrl("dice-canvas");
+          // Giving a friendly prompt setup to extract both reasoning and answer
+          const prompt = `Look at this image carefully. Count ALL the dots on ALL the dice in the image. Add up the total number of dots. Give your step-by-step counting explanation and end with the final total written clearly like: Total = X`;
+          const aiResp = await askGroqVision(imgData, prompt);
+
+          // 1. Extract ONLY the last number sequence from the AI's text
+          const numbersFound = aiResp.match(/\d+/g);
+          const aiNum = numbersFound
+            ? parseInt(numbersFound[numbersFound.length - 1], 10)
+            : NaN;
+
+          // 2. Clean the explanation text if it ends with a double duplicate value (e.g., "20 20")
+          let cleanedResp = aiResp.trim();
+          if (!isNaN(aiNum)) {
+            const duplicatePattern = new RegExp(
+              `(\\b${aiNum}\\b)\\s+\\b${aiNum}\\b$`,
+            );
+            if (duplicatePattern.test(cleanedResp)) {
+              cleanedResp = cleanedResp.replace(
+                duplicatePattern,
+                aiNum.toString(),
+              );
+            }
+          }
+
+          log.innerHTML += `<div class="log-line">📷 Picture studied...</div>`;
+          log.innerHTML += `<div class="log-line log-answer">${cleanedResp}</div>`;
+
+          // 3. Display the clean "AI answer = X" box on the side/below
+          if (!isNaN(aiNum) && finalAnswerBox && finalAnswerNum) {
+            finalAnswerNum.textContent = aiNum;
+            finalAnswerBox.style.display = "block";
+          }
+
+          if (!isNaN(aiNum) && aiNum === diceAnswer) {
+            aiScore++;
+            setResult(
+              "dice-ai-result",
+              `AI got it right! Said: ${aiNum} ✅`,
+              "correct",
+            );
+            log.innerHTML += `<div class="log-line" style="color:var(--human)">✅ AI was correct this time!</div>`;
+          } else {
+            setResult(
+              "dice-ai-result",
+              `AI said "${aiNum || "?"}" — the real answer is ${diceAnswer} ❌`,
+              "wrong",
+            );
+            log.innerHTML += `<div class="log-line" style="color:var(--ai)">❌ AI was wrong. Correct: ${diceAnswer}</div>`;
+          }
+          updateScores();
+        } catch (e) {
+          setResult("dice-ai-result", "Oops: " + e.message, "wrong");
+          log.innerHTML += `<div class="log-line" style="color:var(--ai)">Error: ${e.message}</div>`;
+        }
+        btn.disabled = false;
+      }
+
+      // ═══════════════════════════════════════════════
+      // ACTIVITY 2: TEXT CAPTCHA
+      // ═══════════════════════════════════════════════
+      const CAPTCHA_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+      function generateTextCaptcha() {
+        const canvas = document.getElementById("text-captcha-canvas");
+        const ctx = canvas.getContext("2d");
+        const W = canvas.width,
+          H = canvas.height;
+
+        textAnswer = "";
+        for (let i = 0; i < 5; i++)
+          textAnswer +=
+            CAPTCHA_CHARS[Math.floor(Math.random() * CAPTCHA_CHARS.length)];
+
+        ctx.clearRect(0, 0, W, H);
+
+        const grad = ctx.createLinearGradient(0, 0, W, H);
+        grad.addColorStop(0, "#EAF6FF");
+        grad.addColorStop(1, "#FFF6E3");
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, W, H);
+
+        for (let i = 0; i < 150; i++) {
+          ctx.beginPath();
+          ctx.arc(
+            Math.random() * W,
+            Math.random() * H,
+            Math.random() * 1.5,
+            0,
+            Math.PI * 2,
+          );
+          ctx.fillStyle = `rgba(108,116,160,${0.08 + Math.random() * 0.12})`;
+          ctx.fill();
+        }
+
+        for (let i = 0; i < 7; i++) {
+          ctx.beginPath();
+          ctx.moveTo(Math.random() * W, Math.random() * H);
+          ctx.bezierCurveTo(
+            Math.random() * W,
+            Math.random() * H,
+            Math.random() * W,
+            Math.random() * H,
+            Math.random() * W,
+            Math.random() * H,
+          );
+          ctx.strokeStyle = `rgba(108,116,160,${0.25 + Math.random() * 0.3})`;
+          ctx.lineWidth = 1 + Math.random() * 2;
+          ctx.stroke();
+        }
+
+        const colors = ["#0E97D9", "#E44D4D", "#E8A800", "#178C58", "#8A63F0"];
+        textAnswer.split("").forEach((ch, i) => {
+          ctx.save();
+          const cx = 24 + i * 54;
+          const cy = H / 2 + 8;
+          const rot = (Math.random() - 0.5) * 0.6;
+          const scale = 0.85 + Math.random() * 0.3;
+          ctx.translate(cx, cy);
+          ctx.rotate(rot);
+          ctx.scale(scale, scale + (Math.random() - 0.5) * 0.3);
+          ctx.font = `900 ${36 + Math.random() * 10}px 'Courier New', monospace`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
+          ctx.fillText(ch, 0, 0);
+          ctx.restore();
+        });
+
+        document.getElementById("text-human-answer").value = "";
+        clearResult("text-human-result");
+        clearResult("text-ai-result");
+        document.getElementById("text-ai-log").className = "ai-log";
+      }
+
+      function checkTextHuman() {
+        const ans = document
+          .getElementById("text-human-answer")
+          .value.toUpperCase()
+          .trim();
+        if (!ans) {
+          showToast("Type the letters first!");
+          return;
+        }
+        roundCount++;
+        if (ans === textAnswer) {
+          humanScore++;
+          setResult(
+            "text-human-result",
+            `Yes! It was "${textAnswer}" 🎉`,
+            "correct",
+          );
+          showToast("🎉 Your eyes are sharper than AI!");
+        } else {
+          setResult(
+            "text-human-result",
+            `Not quite! It was "${textAnswer}"`,
+            "wrong",
+          );
+        }
+        updateScores();
+      }
+
+      async function askAIText() {
+        const btn = document.getElementById("text-ai-btn");
+        btn.disabled = true;
+        setResult("text-ai-result", "AI is trying to read it...", "loading");
+        const log = document.getElementById("text-ai-log");
+        log.className = "ai-log show";
+        log.innerHTML =
+          '<div class="log-line">🤖 Studying the wiggly letters...</div>';
+        try {
+          const imgData = getCanvasDataUrl("text-captcha-canvas");
+          const prompt = `This is a CAPTCHA image with distorted, colored letters on a noisy background. There are exactly 5 characters. Read ALL the characters and reply with ONLY those 5 characters in order, nothing else.`;
+          const aiResp = await askGroqVision(imgData, prompt);
+          const aiClean = aiResp
+            .replace(/[^A-Z0-9]/gi, "")
+            .toUpperCase()
+            .slice(0, 5);
+          log.innerHTML += `<div class="log-line log-answer">AI read: "${aiResp}"</div>`;
+          log.innerHTML += `<div class="log-line">Cleaned up: "${aiClean}"</div>`;
+          if (aiClean === textAnswer) {
+            aiScore++;
+            setResult(
+              "text-ai-result",
+              `AI read it correctly: "${aiClean}" ✅`,
+              "correct",
+            );
+            log.innerHTML += `<div class="log-line" style="color:var(--human)">✅ AI was correct!</div>`;
+          } else {
+            setResult(
+              "text-ai-result",
+              `AI said "${aiClean}" — real answer: "${textAnswer}" ❌`,
+              "wrong",
+            );
+            log.innerHTML += `<div class="log-line" style="color:var(--ai)">❌ AI was wrong! Correct: ${textAnswer}</div>`;
+          }
+          updateScores();
+        } catch (e) {
+          setResult("text-ai-result", "Oops: " + e.message, "wrong");
+        }
+        btn.disabled = false;
+      }
+
+      // ═══════════════════════════════════════════════
+      // ACTIVITY 3: CLICK ORDER
+      // ═══════════════════════════════════════════════
+      function generateOrderCaptcha() {
+        const canvas = document.getElementById("click-order-canvas");
+        const ctx = canvas.getContext("2d");
+        const W = canvas.width,
+          H = canvas.height;
+        ctx.clearRect(0, 0, W, H);
+
+        ctx.fillStyle = "#EAF6FF";
+        ctx.fillRect(0, 0, W, H);
+
+        ctx.strokeStyle = "rgba(108,116,160,0.08)";
+        ctx.lineWidth = 1;
+        for (let x = 0; x < W; x += 25) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, H);
+          ctx.stroke();
+        }
+        for (let y = 0; y < H; y += 25) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(W, y);
+          ctx.stroke();
+        }
+
+        orderNumbers = [1, 2, 3, 4, 5, 6];
+        orderPositions = {};
+        const placed = [];
+        const colors = [
+          "#0E97D9",
+          "#E8A800",
+          "#E44D4D",
+          "#178C58",
+          "#8A63F0",
+          "#FF9F43",
+        ];
+
+        orderNumbers.forEach((num, idx) => {
+          let x,
+            y,
+            tries = 0,
+            ok = false;
+          while (!ok && tries < 200) {
+            x = 28 + Math.random() * (W - 56);
+            y = 28 + Math.random() * (H - 56);
+            ok = true;
+            for (const p of placed) {
+              if (Math.abs(x - p.x) < 58 && Math.abs(y - p.y) < 58) {
+                ok = false;
+                break;
+              }
+            }
+            tries++;
+          }
+          placed.push({ x, y });
+          orderPositions[num] = { x, y, color: colors[idx] };
+        });
+
+        Object.entries(orderPositions).forEach(([num, pos]) => {
+          const style = Math.floor(Math.random() * 2);
+          ctx.save();
+          ctx.translate(pos.x, pos.y);
+          const rot = (Math.random() - 0.5) * 0.4;
+          ctx.rotate(rot);
+
+          if (style === 0) {
+            ctx.beginPath();
+            ctx.arc(0, 0, 19, 0, Math.PI * 2);
+            ctx.fillStyle = pos.color + "26";
+            ctx.fill();
+            ctx.strokeStyle = pos.color;
+            ctx.lineWidth = 3;
+            ctx.stroke();
+          } else {
+            ctx.fillStyle = pos.color + "20";
+            ctx.beginPath();
+            ctx.roundRect(-18, -18, 36, 36, 8);
+            ctx.fill();
+            ctx.strokeStyle = pos.color;
+            ctx.lineWidth = 3;
+            ctx.stroke();
+          }
+
+          ctx.font = `900 ${20 + Math.floor(Math.random() * 10)}px 'Courier New'`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillStyle = pos.color;
+          ctx.fillText(num, 0, 0);
+          ctx.restore();
+        });
+
+        orderClickProgress = 0;
+        document.getElementById("order-progress").textContent =
+          "Click number: 1 next";
+        document.getElementById("order-progress").style.color = "#A87400";
+        clearResult("order-human-result");
+        clearResult("order-ai-result");
+        document.getElementById("order-ai-log").className = "ai-log";
+      }
+
+      function handleOrderClick(e) {
+        if (orderClickProgress >= 6) return;
+        const canvas = document.getElementById("click-order-canvas");
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const cx = (e.clientX - rect.left) * scaleX;
+        const cy = (e.clientY - rect.top) * scaleY;
+        const next = orderClickProgress + 1;
+        const pos = orderPositions[next];
+        const dist = Math.sqrt((cx - pos.x) ** 2 + (cy - pos.y) ** 2);
+
+        if (dist < 30) {
+          const ctx = canvas.getContext("2d");
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(pos.x, pos.y, 23, 0, Math.PI * 2);
+          ctx.fillStyle = "rgba(34,181,115,0.35)";
+          ctx.fill();
+          ctx.strokeStyle = "#22B573";
+          ctx.lineWidth = 3;
+          ctx.stroke();
+          ctx.font = "900 14px Nunito";
+          ctx.fillStyle = "#178C58";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText("✓", pos.x, pos.y);
+          ctx.restore();
+
+          orderClickProgress++;
+          if (orderClickProgress === 6) {
+            humanScore++;
+            roundCount++;
+            document.getElementById("order-progress").textContent =
+              "🎉 All found, perfect order!";
+            document.getElementById("order-progress").style.color =
+              "var(--human)";
+            setResult(
+              "order-human-result",
+              "Amazing! You clicked them all in order! 🎉",
+              "correct",
+            );
+            updateScores();
+          } else {
+            document.getElementById("order-progress").textContent =
+              `Great! Now click: ${orderClickProgress + 1}`;
+          }
+        } else {
+          let hitWrong = false;
+          for (let n = 1; n <= 6; n++) {
+            if (n === next) continue;
+            const p = orderPositions[n];
+            if (Math.sqrt((cx - p.x) ** 2 + (cy - p.y) ** 2) < 30) {
+              hitWrong = true;
+              break;
+            }
+          }
+          if (hitWrong) {
+            showToast(`❌ That's not ${next} — try again!`);
+          }
+        }
+      }
+
+      async function askAIOrder() {
+        const btn = document.getElementById("order-ai-btn");
+        btn.disabled = true;
+        setResult(
+          "order-ai-result",
+          "AI is scanning for numbers...",
+          "loading",
+        );
+        const log = document.getElementById("order-ai-log");
+        log.className = "ai-log show";
+        log.innerHTML =
+          '<div class="log-line">🤖 Looking for numbers 1–6...</div>';
+        try {
+          const imgData = getCanvasDataUrl("click-order-canvas");
+          const prompt = `Look at this image. It contains the numbers 1, 2, 3, 4, 5, and 6 scattered in different positions. For each number, tell me roughly where it is (top-left, top-right, middle-left, middle-right, bottom-left, bottom-right). List them all. Then confirm the correct clicking order would be 1, 2, 3, 4, 5, 6 from smallest to largest.`;
+          const aiResp = await askGroqVision(imgData, prompt);
+          log.innerHTML += `<div class="log-line log-answer">AI response:</div>`;
+          log.innerHTML += `<div class="log-line">${aiResp.slice(0, 300)}...</div>`;
+
+          const mentionsAll = [1, 2, 3, 4, 5, 6].every((n) =>
+            aiResp.includes(String(n)),
+          );
+          if (mentionsAll) {
+            setResult(
+              "order-ai-result",
+              `AI named all the numbers, but clicking them in order is a whole different challenge! 🤔`,
+              "wrong",
+            );
+            log.innerHTML += `<div class="log-line" style="color:#A87400">⚠️ AI can name numbers but can't actually click a sequence with a mouse.</div>`;
+          } else {
+            setResult("order-ai-result", `AI missed some numbers! ❌`, "wrong");
+            log.innerHTML += `<div class="log-line" style="color:var(--ai)">❌ AI didn't find every number correctly.</div>`;
+          }
+          updateScores();
+        } catch (e) {
+          setResult("order-ai-result", "Oops: " + e.message, "wrong");
+        }
+        btn.disabled = false;
+      }
+
+      // ═══════════════════════════════════════════════
+      // ACTIVITY 4: MISLEADING CLICK
+      // ═══════════════════════════════════════════════
+      const MISLEAD_PUZZLES = [
+        {
+          instruction: "Click the button that says DO NOT CLICK",
+          buttons: ["CLICK HERE", "DO NOT CLICK", "PRESS ME"],
+          correct: 1,
+          trap: "The instructions say to click the one labeled 'DO NOT CLICK' — but AI often reads the button label literally and gets confused!",
+        },
+        {
+          instruction: "Click the SMALLEST number",
+          buttons: ["99", "3", "47"],
+          correct: 1,
+          trap: "AI can get distracted by how big the text looks instead of the actual number value.",
+        },
+        {
+          instruction: "Click the button that is NOT green",
+          buttons: ["🟢 Green", "🔴 Red", "🟢 Also green"],
+          correct: 1,
+          trap: "AI can mix up color words in the text with the real color it should pick.",
+        },
+        {
+          instruction:
+            "The picture says 'Press BLUE'. But click the RED button.",
+          buttons: ["BLUE", "RED", "GREEN"],
+          correct: 1,
+          trap: "AI often follows the text shown inside the picture, not the real instruction above it.",
+        },
+        {
+          instruction:
+            "Click the word for what you should NOT do with a hot stove",
+          buttons: ["Touch it", "Avoid it", "Use oven mitts"],
+          correct: 0,
+          trap: "AI can misread instructions with 'not' in them.",
+        },
+        {
+          instruction: "Click the option with the FEWEST letters",
+          buttons: ["cat", "elephant", "banana"],
+          correct: 0,
+          trap: "Counting letters carefully is something AI can rush and get wrong.",
+        },
+      ];
+
+      let currentMislead = 0;
+      function generateMislead() {
+        currentMislead = Math.floor(Math.random() * MISLEAD_PUZZLES.length);
+        const puz = MISLEAD_PUZZLES[currentMislead];
+
+        const canvas = document.getElementById("mislead-canvas");
+        const ctx = canvas.getContext("2d");
+        const W = canvas.width,
+          H = canvas.height;
+        ctx.clearRect(0, 0, W, H);
+
+        const grad = ctx.createLinearGradient(0, 0, W, H);
+        grad.addColorStop(0, "#EAF6FF");
+        grad.addColorStop(1, "#FFF6E3");
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, W, H);
+
+        ctx.font = "900 14px Nunito, sans-serif";
+        ctx.fillStyle = "#E8A800";
+        ctx.textAlign = "center";
+        ctx.fillText("⚠️ READ CAREFULLY:", W / 2, 28);
+        ctx.font = "800 15px Nunito, sans-serif";
+        ctx.fillStyle = "#22284A";
+        const words = puz.instruction.split(" ");
+        let line = "",
+          lines = [],
+          y = 54;
+        words.forEach((w) => {
+          const test = line + w + " ";
+          if (ctx.measureText(test).width > W - 30 && line !== "") {
+            lines.push(line);
+            line = w + " ";
+          } else line = test;
+        });
+        if (line) lines.push(line);
+        lines.forEach((l, i) => {
+          ctx.fillText(l, W / 2, y + i * 22);
+        });
+
+        const optDiv = document.getElementById("mislead-options");
+        optDiv.innerHTML = "";
+        puz.buttons.forEach((label, i) => {
+          const btn = document.createElement("button");
+          btn.className = "btn btn-regen";
+          btn.style.fontSize = "14px";
+          btn.textContent = label;
+          btn.onclick = () => checkMislead(i);
+          optDiv.appendChild(btn);
+        });
+
+        document.getElementById("mislead-question").textContent =
+          puz.instruction;
+        misleadData = puz;
+        clearResult("mislead-human-result");
+        clearResult("mislead-ai-result");
+        document.getElementById("mislead-ai-log").className = "ai-log";
+      }
+
+      function checkMislead(idx) {
+        const puz = MISLEAD_PUZZLES[currentMislead];
+        roundCount++;
+        if (idx === puz.correct) {
+          humanScore++;
+          setResult(
+            "mislead-human-result",
+            `Correct! You weren't fooled! 🎉`,
+            "correct",
+          );
+          showToast("🧠 You outsmarted the trick!");
+        } else {
+          setResult(
+            "mislead-human-result",
+            `Oops! The right answer was "${puz.buttons[puz.correct]}" — ${puz.trap}`,
+            "wrong",
+          );
+        }
+        updateScores();
+      }
+
+      async function askAIMislead() {
+        const btn = document.getElementById("mislead-ai-btn");
+        btn.disabled = true;
+        const puz = MISLEAD_PUZZLES[currentMislead];
+        setResult(
+          "mislead-ai-result",
+          "AI is reading the puzzle...",
+          "loading",
+        );
+        const log = document.getElementById("mislead-ai-log");
+        log.className = "ai-log show";
+        log.innerHTML =
+          '<div class="log-line">🤖 Studying the picture and choices...</div>';
+        try {
+          const imgData = getCanvasDataUrl("mislead-canvas");
+          const opts = puz.buttons
+            .map((b, i) => `Option ${i + 1}: "${b}"`)
+            .join(", ");
+          const prompt = `Look at this CAPTCHA image. It contains an instruction. The available options are: ${opts}.
+
+Based ONLY on the instruction, which option number should be clicked?
+
+IMPORTANT RULES:
+- Reply with ONLY a single digit: 1 or 2 or 3
+- Do NOT explain
+- Do NOT write any other words
+- Just the number`;
+          const aiResp = await askGroqVision(imgData, prompt);
+          
+          // Better parsing: find first standalone 1, 2, or 3
+          let aiNum = -1;
+          const match = aiResp.match(/\b([123])\b/);
+          if (match) {
+            aiNum = parseInt(match[1], 10) - 1;
+          } else {
+            // fallback: take first digit that is 1-3
+            const digits = aiResp.replace(/[^0-9]/g, "");
+            for (const d of digits) {
+              if (d === "1" || d === "2" || d === "3") {
+                aiNum = parseInt(d, 10) - 1;
+                break;
+              }
+            }
+          }
+          log.innerHTML += `<div class="log-line log-answer">AI chose: "${aiResp.slice(0, 80)}${aiResp.length > 80 ? "..." : ""}"</div>`;
+
+          if (aiNum === puz.correct) {
+            aiScore++;
+            setResult(
+              "mislead-ai-result",
+              `AI got it right this time! ✅`,
+              "correct",
+            );
+            log.innerHTML += `<div class="log-line" style="color:var(--human)">✅ AI was correct!</div>`;
+          } else {
+            const aiChoice = puz.buttons[aiNum] || aiResp;
+            setResult(
+              "mislead-ai-result",
+              `AI chose "${aiChoice}" — wrong! ❌ ${puz.trap}`,
+              "wrong",
+            );
+            log.innerHTML += `<div class="log-line" style="color:var(--ai)">❌ AI was fooled! ${puz.trap}</div>`;
+          }
+          updateScores();
+        } catch (e) {
+          setResult("mislead-ai-result", "Oops: " + e.message, "wrong");
+        }
+        btn.disabled = false;
+      }
+
+      // ═══════════════════════════════════════════════
+      // ACTIVITY 5: ANIMAL GRID CAPTCHA
+      // ═══════════════════════════════════════════════
+      const ANIMAL_SETS = [
+        {
+          target: "🐶",
+          decoys: ["🐱", "🐭", "🐰", "🦊", "🐻", "🐼", "🐨", "🐯"],
+        },
+        {
+          target: "🐱",
+          decoys: ["🐶", "🐭", "🐰", "🦊", "🐻", "🐼", "🐨", "🐯"],
+        },
+        {
+          target: "🐸",
+          decoys: ["🐊", "🦎", "🐢", "🦖", "🐍", "🦕", "🐉", "🦜"],
+        },
+        {
+          target: "🐧",
+          decoys: ["🦅", "🦆", "🦉", "🦚", "🦜", "🐦", "🦢", "🕊️"],
+        },
+        {
+          target: "🐰",
+          decoys: ["🐭", "🐹", "🦔", "🐿️", "🦫", "🦦", "🦡", "🦨"],
+        },
+        {
+          target: "🦁",
+          decoys: ["🐯", "🐆", "🐻", "🦊", "🐺", "🦝", "🐗", "🦌"],
+        },
+        {
+          target: "🐮",
+          decoys: ["🐷", "🐑", "🐐", "🦙", "🦌", "🐴", "🦏", "🐘"],
+        },
+        {
+          target: "🐵",
+          decoys: ["🦧", "🦍", "🐒", "🦊", "🐨", "🐼", "🦝", "🐻"],
+        },
+      ];
+
+      let animalTarget = "";
+      let animalGrid = [];
+      let animalSelected = new Set();
+      let animalCorrectIndices = [];
+
+      const ANIMAL_NAMES = {
+        "🐶": "puppy",
+        "🐱": "kitty",
+        "🐭": "mouse",
+        "🐰": "bunny",
+        "🦊": "fox",
+        "🐻": "bear",
+        "🐼": "panda",
+        "🐨": "koala",
+        "🐯": "tiger",
+        "🦁": "lion",
+        "🐮": "cow",
+        "🐷": "pig",
+        "🐸": "frog",
+        "🐵": "monkey",
+        "🐧": "penguin",
+        "🦅": "eagle",
+        "🦆": "duck",
+        "🦉": "owl",
+        "🦚": "peacock",
+        "🦜": "parrot",
+        "🐦": "bird",
+        "🦢": "swan",
+        "🕊️": "dove",
+        "🐹": "hamster",
+        "🦔": "hedgehog",
+        "🐿️": "chipmunk",
+        "🦫": "beaver",
+        "🦦": "otter",
+        "🦡": "badger",
+        "🦨": "skunk",
+        "🐆": "leopard",
+        "🐺": "wolf",
+        "🦝": "raccoon",
+        "🐗": "boar",
+        "🦌": "deer",
+        "🐑": "sheep",
+        "🐐": "goat",
+        "🦙": "llama",
+        "🐴": "horse",
+        "🦏": "rhino",
+        "🐘": "elephant",
+        "🦧": "orangutan",
+        "🦍": "gorilla",
+        "🐒": "chimp",
+      };
+
+      function getAnimalName(emoji) {
+        return ANIMAL_NAMES[emoji] || emoji;
+      }
+
+      function generateAnimalChallenge() {
+        const set = ANIMAL_SETS[Math.floor(Math.random() * ANIMAL_SETS.length)];
+        animalTarget = set.target;
+        animalSelected = new Set();
+        animalCorrectIndices = [];
+
+        const targetCount = 2 + Math.floor(Math.random() * 3);
+        const decoyPool = [...set.decoys].sort(() => 0.5 - Math.random());
+
+        animalGrid = [];
+        const positions = Array.from({ length: 9 }, (_, i) => i).sort(
+          () => 0.5 - Math.random(),
+        );
+        for (let i = 0; i < targetCount; i++) {
+          animalGrid.push({ emoji: animalTarget, isTarget: true });
+          animalCorrectIndices.push(positions[i]);
+        }
+        for (let i = targetCount; i < 9; i++) {
+          animalGrid.push({
+            emoji: decoyPool[i - targetCount] || set.decoys[0],
+            isTarget: false,
+          });
+        }
+        const shuffled = Array(9).fill(null);
+        animalGrid.forEach((cell, i) => {
+          shuffled[positions[i]] = cell;
+        });
+        animalGrid = shuffled;
+        animalCorrectIndices = positions
+          .slice(0, targetCount)
+          .sort((a, b) => a - b);
+
+        renderAnimalGrid();
+
+        document.getElementById("animal-instruction").innerHTML =
+          `Find every <strong style="font-size:1.4rem">${animalTarget}</strong> <strong>${getAnimalName(animalTarget)}</strong>!<br>
+     <span style="font-size:12px; color:var(--muted); font-weight:700;">There are ${targetCount} hiding — click them all, then press Verify</span>`;
+
+        drawAnimalToCanvas();
+
+        clearResult("animal-human-result");
+        clearResult("animal-ai-result");
+        const log = document.getElementById("animal-ai-log");
+        log.className = "ai-log";
+        log.innerHTML = "";
+      }
+
+      function renderAnimalGrid() {
+        const grid = document.getElementById("animal-grid");
+        grid.innerHTML = "";
+        animalGrid.forEach((cell, i) => {
+          const tile = document.createElement("div");
+          tile.className = "animal-tile";
+          tile.dataset.idx = i;
+          tile.textContent = cell.emoji;
+          tile.onclick = () => toggleAnimalTile(i);
+          if (animalSelected.has(i)) tile.classList.add("selected");
+          grid.appendChild(tile);
+        });
+      }
+
+      function toggleAnimalTile(idx) {
+        if (animalSelected.has(idx)) {
+          animalSelected.delete(idx);
+        } else {
+          animalSelected.add(idx);
+        }
+        renderAnimalGrid();
+      }
+
+      function checkAnimalHuman() {
+        if (animalGrid.length === 0) {
+          showToast("Make a new grid first!");
+          return;
+        }
+
+        const selectedArr = [...animalSelected].sort((a, b) => a - b);
+        const correctArr = [...animalCorrectIndices].sort((a, b) => a - b);
+
+        roundCount++;
+        const isCorrect =
+          selectedArr.length === correctArr.length &&
+          selectedArr.every((v, i) => v === correctArr[i]);
+
+        const tiles = document.querySelectorAll(".animal-tile");
+        tiles.forEach((tile, i) => {
+          if (animalGrid[i].isTarget) {
+            tile.classList.add("reveal-correct");
+          } else if (animalSelected.has(i)) {
+            tile.classList.add("reveal-wrong");
+          }
+          tile.onclick = null;
+        });
+
+        if (isCorrect) {
+          humanScore++;
+          setResult(
+            "animal-human-result",
+            `Perfect! You found all ${animalCorrectIndices.length} ${animalTarget} tiles! 🎉`,
+            "correct",
+          );
+          showToast("🎉 You passed the CAPTCHA!");
+        } else {
+          const missed = correctArr.filter(
+            (i) => !selectedArr.includes(i),
+          ).length;
+          const wrong = selectedArr.filter(
+            (i) => !correctArr.includes(i),
+          ).length;
+          let msg = `Not quite! `;
+          if (missed > 0) msg += `You missed ${missed}. `;
+          if (wrong > 0) msg += `${wrong} wrong pick(s). `;
+          setResult(
+            "animal-human-result",
+            msg + `The right tiles are lit up! ❌`,
+            "wrong",
+          );
+        }
+        updateScores();
+      }
+
+      function drawAnimalToCanvas() {
+        const canvas = document.getElementById("animal-ai-canvas");
+        const ctx = canvas.getContext("2d");
+        const W = canvas.width,
+          H = canvas.height;
+        const cell = Math.floor((W - 12) / 3);
+        ctx.clearRect(0, 0, W, H);
+        ctx.fillStyle = "#EAF6FF";
+        ctx.fillRect(0, 0, W, H);
+
+        animalGrid.forEach((item, i) => {
+          const col = i % 3;
+          const row = Math.floor(i / 3);
+          const x = 4 + col * (cell + 2);
+          const y = 4 + row * (cell + 2);
+
+          ctx.fillStyle = "#FFFFFF";
+          ctx.beginPath();
+          ctx.roundRect(x, y, cell, cell, 8);
+          ctx.fill();
+          ctx.strokeStyle = "#DCE8FB";
+          ctx.lineWidth = 2;
+          ctx.stroke();
+
+          ctx.font = `bold 10px Nunito`;
+          ctx.fillStyle = "rgba(34,40,74,0.35)";
+          ctx.textAlign = "left";
+          ctx.textBaseline = "top";
+          ctx.fillText(`R${row + 1}C${col + 1}`, x + 4, y + 4);
+
+          ctx.font = `${cell * 0.5}px Arial`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(item.emoji, x + cell / 2, y + cell / 2 + 4);
+        });
+      }
+
+      async function askAIAnimal() {
+        if (animalGrid.length === 0) {
+          showToast("Make a new grid first!");
+          return;
+        }
+        const btn = document.getElementById("animal-ai-btn");
+        btn.disabled = true;
+        setResult("animal-ai-result", "AI is scanning the grid...", "loading");
+        const log = document.getElementById("animal-ai-log");
+        log.className = "ai-log show";
+        log.innerHTML =
+          '<div class="log-line">🤖 Studying the 3×3 grid...</div>';
+
+        try {
+          const imgData = getCanvasDataUrl("animal-ai-canvas");
+          const targetName = getAnimalName(animalTarget);
+          const prompt = `This is a 3×3 grid of animal emoji tiles. Each tile is labeled with its position: R1C1 (row 1, col 1) top-left, up to R3C3 (row 3, col 3) bottom-right.
+
+The task: Find ALL tiles that contain a ${targetName} (${animalTarget}).
+
+List ONLY the positions of tiles that show a ${targetName}. Use format like: R1C2, R2C3
+Reply with ONLY the position codes, comma-separated. Nothing else.`;
+
+          log.innerHTML += `<div class="log-line">📋 Task: find every ${animalTarget} (${targetName}) tile</div>`;
+          const aiResp = await askGroqVision(imgData, prompt);
+          log.innerHTML += `<div class="log-line log-answer">AI answer: "${aiResp}"</div>`;
+
+          const aiPositions = [...aiResp.matchAll(/R(\d)C(\d)/gi)]
+            .map((m) => {
+              const r = parseInt(m[1]) - 1;
+              const c = parseInt(m[2]) - 1;
+              return r * 3 + c;
+            })
+            .filter((idx) => idx >= 0 && idx < 9);
+
+          const uniqueAI = [...new Set(aiPositions)].sort((a, b) => a - b);
+          const correct = [...animalCorrectIndices].sort((a, b) => a - b);
+
+          log.innerHTML += `<div class="log-line">AI picked: [${uniqueAI.join(", ")}]</div>`;
+          log.innerHTML += `<div class="log-line">Correct: [${correct.join(", ")}]</div>`;
+
+          const isCorrect =
+            uniqueAI.length === correct.length &&
+            uniqueAI.every((v, i) => v === correct[i]);
+
+          if (isCorrect) {
+            aiScore++;
+            setResult(
+              "animal-ai-result",
+              `AI found every ${animalTarget} tile correctly! ✅`,
+              "correct",
+            );
+            log.innerHTML += `<div class="log-line" style="color:var(--human)">✅ AI passed the CAPTCHA!</div>`;
+          } else {
+            const missed = correct.filter((i) => !uniqueAI.includes(i)).length;
+            const falsePos = uniqueAI.filter(
+              (i) => !correct.includes(i),
+            ).length;
+            setResult(
+              "animal-ai-result",
+              `AI was wrong ❌ — missed ${missed}, picked ${falsePos} extra`,
+              "wrong",
+            );
+            log.innerHTML += `<div class="log-line" style="color:var(--ai)">❌ AI missed ${missed} target(s) and imagined ${falsePos} extra one(s)</div>`;
+          }
+          updateScores();
+        } catch (e) {
+          setResult("animal-ai-result", "Oops: " + e.message, "wrong");
+          log.innerHTML += `<div class="log-line" style="color:var(--ai)">Error: ${e.message}</div>`;
+        }
+        btn.disabled = false;
+      }
+
+      // ═══════════════════════════════════════════════
+      // ACTIVITY 6: PATTERN FIXER (NEW)
+      // ═══════════════════════════════════════════════
+      const SHAPE_LIST = ["circle", "square", "triangle", "star"];
+      const COLOR_LIST = [
+        { hex: "#E44D4D", name: "red" },
+        { hex: "#0E97D9", name: "blue" },
+        { hex: "#E8A800", name: "yellow" },
+        { hex: "#178C58", name: "green" },
+        { hex: "#8A63F0", name: "purple" },
+      ];
+
+      function drawStar(ctx, cx, cy, outerR, innerR, color) {
+        let rot = (Math.PI / 2) * 3;
+        const spikes = 5;
+        const step = Math.PI / spikes;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - outerR);
+        for (let i = 0; i < spikes; i++) {
+          let x = cx + Math.cos(rot) * outerR,
+            y = cy + Math.sin(rot) * outerR;
+          ctx.lineTo(x, y);
+          rot += step;
+          x = cx + Math.cos(rot) * innerR;
+          y = cy + Math.sin(rot) * innerR;
+          ctx.lineTo(x, y);
+          rot += step;
+        }
+        ctx.closePath();
+        ctx.fillStyle = color;
+        ctx.fill();
+      }
+
+      const SHAPE_DRAWERS = {
+        circle: (ctx, x, y, s, color) => {
+          ctx.beginPath();
+          ctx.arc(x, y, s / 2, 0, Math.PI * 2);
+          ctx.fillStyle = color;
+          ctx.fill();
+        },
+        square: (ctx, x, y, s, color) => {
+          ctx.fillStyle = color;
+          ctx.beginPath();
+          ctx.roundRect(x - s / 2, y - s / 2, s, s, 6);
+          ctx.fill();
+        },
+        triangle: (ctx, x, y, s, color) => {
+          ctx.beginPath();
+          ctx.moveTo(x, y - s / 2);
+          ctx.lineTo(x + s / 2, y + s / 2);
+          ctx.lineTo(x - s / 2, y + s / 2);
+          ctx.closePath();
+          ctx.fillStyle = color;
+          ctx.fill();
+        },
+        star: (ctx, x, y, s, color) =>
+          drawStar(ctx, x, y, s / 2, s / 4.2, color),
+      };
+
+      function randChoice(arr) {
+        return arr[Math.floor(Math.random() * arr.length)];
+      }
+
+      let patternSeq = [];
+      let patternOptions = [];
+      let patternCorrectIdx = 0;
+
+      function generatePattern() {
+        const unitLen = Math.random() < 0.5 ? 2 : 3;
+        const unit = [];
+        for (let i = 0; i < unitLen; i++) {
+          unit.push({
+            shape: randChoice(SHAPE_LIST),
+            color: randChoice(COLOR_LIST),
+          });
+        }
+        patternSeq = [];
+        for (let i = 0; i < 5; i++) patternSeq.push(unit[i % unitLen]);
+        const answer = patternSeq[4];
+
+        const wrongShapePool = SHAPE_LIST.filter((s) => s !== answer.shape);
+        const wrongColorPool = COLOR_LIST.filter(
+          (c) => c.name !== answer.color.name,
+        );
+
+        const opts = [
+          answer,
+          { shape: randChoice(wrongShapePool), color: answer.color },
+          { shape: answer.shape, color: randChoice(wrongColorPool) },
+          {
+            shape: randChoice(wrongShapePool),
+            color: randChoice(wrongColorPool),
+          },
+        ];
+
+        const withIdx = opts.map((o, i) => ({ o, orig: i }));
+        withIdx.sort(() => Math.random() - 0.5);
+        patternOptions = withIdx.map((w) => w.o);
+        patternCorrectIdx = withIdx.findIndex((w) => w.orig === 0);
+
+        drawPatternCanvas();
+        renderPatternOptions();
+        clearResult("pattern-human-result");
+        clearResult("pattern-ai-result");
+        document.getElementById("pattern-ai-log").className = "ai-log";
+        document.getElementById("pattern-ai-log").innerHTML = "";
+      }
+
+      function drawPatternCanvas() {
+        const canvas = document.getElementById("pattern-canvas");
+        const ctx = canvas.getContext("2d");
+        const W = canvas.width,
+          H = canvas.height;
+        ctx.clearRect(0, 0, W, H);
+        ctx.fillStyle = "#EAF6FF";
+        ctx.fillRect(0, 0, W, H);
+
+        const slotW = W / 5;
+        for (let i = 0; i < 5; i++) {
+          const cx = slotW * i + slotW / 2;
+          const cy = H / 2;
+
+          ctx.fillStyle = "#FFFFFF";
+          ctx.strokeStyle = "#DCE8FB";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.roundRect(cx - slotW / 2 + 6, cy - 38, slotW - 12, 76, 12);
+          ctx.fill();
+          ctx.stroke();
+
+          if (i < 4) {
+            const item = patternSeq[i];
+            SHAPE_DRAWERS[item.shape](ctx, cx, cy, 38, item.color.hex);
+          } else {
+            ctx.strokeStyle = "#B7C4E0";
+            ctx.lineWidth = 3;
+            ctx.setLineDash([5, 4]);
+            ctx.beginPath();
+            ctx.roundRect(cx - slotW / 2 + 12, cy - 30, slotW - 24, 60, 10);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle = "#B7C4E0";
+            ctx.font = '900 30px "Fredoka One", cursive';
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText("?", cx, cy);
+          }
+        }
+      }
+
+      function renderPatternOptions() {
+        const wrap = document.getElementById("pattern-options");
+        wrap.innerHTML = "";
+        patternOptions.forEach((opt, i) => {
+          const btn = document.createElement("button");
+          btn.className = "pattern-opt-btn";
+          btn.onclick = () => checkPatternHuman(i);
+          const c = document.createElement("canvas");
+          c.width = 56;
+          c.height = 56;
+          const cx = c.getContext("2d");
+          SHAPE_DRAWERS[opt.shape](cx, 28, 28, 34, opt.color.hex);
+          btn.appendChild(c);
+          wrap.appendChild(btn);
+        });
+      }
+
+      function checkPatternHuman(idx) {
+        roundCount++;
+        const optBtns = document.querySelectorAll(".pattern-opt-btn");
+        optBtns.forEach((b) => (b.disabled = true));
+        if (idx === patternCorrectIdx) {
+          humanScore++;
+          optBtns[idx].classList.add("opt-correct");
+          setResult(
+            "pattern-human-result",
+            "Yes! You spotted the pattern! 🎉",
+            "correct",
+          );
+          showToast("🧩 Pattern master!");
+        } else {
+          optBtns[idx].classList.add("opt-wrong");
+          optBtns[patternCorrectIdx].classList.add("opt-correct");
+          setResult(
+            "pattern-human-result",
+            "So close! Here is the right shape ✨",
+            "wrong",
+          );
+        }
+        updateScores();
+      }
+
+      async function askAIPattern() {
+        const btn = document.getElementById("pattern-ai-btn");
+        btn.disabled = true;
+        setResult(
+          "pattern-ai-result",
+          "AI is studying the pattern...",
+          "loading",
+        );
+        const log = document.getElementById("pattern-ai-log");
+        log.className = "ai-log show";
+        log.innerHTML =
+          '<div class="log-line">🤖 Looking for the repeating rule...</div>';
+        try {
+          const imgData = getCanvasDataUrl("pattern-canvas");
+          const optsDesc = patternOptions
+            .map((o, i) => `Option ${i + 1}: a ${o.color.name} ${o.shape}`)
+            .join(", ");
+          const prompt = `This image shows a repeating pattern of colored shapes in 4 boxes, followed by a 5th empty box with a question mark. Figure out the repeating rule and decide which shape belongs in the empty box. The choices are: ${optsDesc}. Reply with ONLY the option number that correctly completes the pattern.`;
+          const aiResp = await askGroqVision(imgData, prompt);
+          const aiNum = parseInt(aiResp.replace(/[^0-9]/g, "")) - 1;
+          log.innerHTML += `<div class="log-line log-answer">AI chose option ${aiNum + 1}</div>`;
+          if (aiNum === patternCorrectIdx) {
+            aiScore++;
+            setResult(
+              "pattern-ai-result",
+              "AI solved the pattern! ✅",
+              "correct",
+            );
+            log.innerHTML += `<div class="log-line" style="color:var(--human)">✅ AI got it right this time!</div>`;
+          } else {
+            setResult(
+              "pattern-ai-result",
+              "AI picked the wrong shape ❌",
+              "wrong",
+            );
+            log.innerHTML += `<div class="log-line" style="color:var(--ai)">❌ AI missed the pattern rule.</div>`;
+          }
+          updateScores();
+        } catch (e) {
+          setResult("pattern-ai-result", "Oops: " + e.message, "wrong");
+        }
+        btn.disabled = false;
+      }
+
+      // ═══════════════════════════════════════════════
+      // INIT
+      // ═══════════════════════════════════════════════
+      window.addEventListener("load", () => {
+        generateDice();
+        generateTextCaptcha();
+        generateOrderCaptcha();
+        generateMislead();
+        generateAnimalChallenge();
+        generatePattern();
+      });
+    </script>
+  </body>
+</html>
